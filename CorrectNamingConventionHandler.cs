@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 
@@ -72,7 +73,7 @@ namespace Scherf.CorrectieTool
                     var miniTrackList = UpdateReferenceNameConvention(tmpExtractionFilename);
 
                     if (miniTrackList.Count > 0)
-                    {
+                    {                        
                         entry.Delete();
 
                         ZipFileExtensions.CreateEntryFromFile(zip, tmpExtractionFilename, entry.FullName);
@@ -133,7 +134,12 @@ namespace Scherf.CorrectieTool
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
                 XmlNode storageChange = node.ParentNode.ParentNode;
                 XmlNode copyStorageChange = storageChange.CloneNode(true);
-                copyStorageChange.FirstChild.InnerText = "Delete";
+                //copyStorageChange.FirstChild.InnerText = "Delete";
+                var captionNode = copyStorageChange.SelectSingleNode("a:Translations/a:TranslationChange/a:Caption", nsmgr);
+                if(captionNode != null)
+                {
+                    captionNode.InnerText = String.Concat(captionNode.InnerText.Trim(), " - VERWIJDEREN");
+                }
                 storageChange.ParentNode.InsertBefore(copyStorageChange, storageChange);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 
@@ -216,7 +222,7 @@ namespace Scherf.CorrectieTool
                 result = result.Replace("(", "");
                 result = result.Replace(")", "");
                 result = result.Replace("-", "_");
-
+                result = Regex.Replace(result, @"\d+", m => int.Parse(m.Value).ToString("0#"));
                 return result;
             }
 
@@ -246,9 +252,9 @@ namespace Scherf.CorrectieTool
 
             public void UpdateMe(ZipArchive archive)
             {
-                var entry = archive.GetEntry(OriginalArchiveEntryKey.FullName);
-                if (entry != null)
-                    entry.Delete();
+                //var entry = archive.GetEntry(OriginalArchiveEntryKey.FullName);
+                //if (entry != null)
+                    //entry.Delete();
 
                 ZipFileExtensions.CreateEntryFromFile(archive, _tmpExtractionFilename, UpdatedEntryKey);
             }
